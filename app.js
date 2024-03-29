@@ -1,162 +1,19 @@
-const fs = require('fs');
 const express = require('express');
 // logging middleware
 const morgan = require('morgan');
+const tourRouter = require('./routes/tourRoutes');
+const userRouter = require('./routes/userRoutes');
 
 const app = express();
 
 // 1) MIDDLEWARES
-
 app.use(morgan('dev'));
-
 app.use(express.json());
-
 app.use((req, res, next) => {
   req.requstTime = new Date().toISOString();
   req.language = 'fa';
   next();
 });
-
-const tours = JSON.parse(
-  fs.readFileSync(`${__dirname}/dev-data/data/tours-simple.json`, 'utf-8')
-);
-const users = JSON.parse(
-  fs.readFileSync(`${__dirname}/dev-data/data/users.json`, 'utf-8')
-);
-
-// 2) ROUTES HANDLERS
-
-const getAllTours = (req, res) => {
-  res.status(200).json({
-    status: 'success',
-    requestedAt: req.requstTime,
-    language: req.language,
-    results: tours.length,
-    data: {
-      tours,
-    },
-  });
-};
-
-const getTour = (req, res) => {
-  const tourId = req.params.id * 1;
-  const tour = tours.find((tour) => tour.id === tourId);
-
-  // if (tourId > tours.length - 1) {
-  if (!tour) {
-    res.status(404).json({
-      status: 'fail',
-      message: 'Invalid ID',
-    });
-  }
-
-  res.status(200).json({
-    status: 'success',
-    data: {
-      tour,
-    },
-  });
-};
-
-const createTour = (req, res) => {
-  const newId = tours[tours.length - 1].id + 1;
-  const newTour = Object.assign({ id: newId }, req.body);
-  tours.push(newTour);
-  fs.writeFile(
-    `${__dirname}/dev-data/data/tours-simple.json`,
-    JSON.stringify(tours),
-    (err) => {
-      res.status(201).json({
-        status: 'success',
-        data: {
-          tour: newTour,
-        },
-      });
-    }
-  );
-};
-
-const updateTour = (req, res) => {
-  const tourId = req.params.id * 1;
-
-  if (tourId > tours.length - 1) {
-    res.status(404).json({
-      status: 'fail',
-      message: 'Invalid ID',
-    });
-  }
-
-  res.status(200).json({
-    status: 'success',
-    data: {
-      tour: '<Updated tour here...>',
-    },
-  });
-};
-
-const deleteTour = (req, res) => {
-  const tourId = req.params.id * 1;
-
-  if (tourId > tours.length - 1) {
-    res.status(404).json({
-      status: 'fail',
-      message: 'Invalid ID',
-    });
-  }
-
-  const newTours = tours.filter((tour) => tour.id !== tourId);
-
-  fs.writeFile(
-    `${__dirname}/dev-data/data/tours-simple.json`,
-    JSON.stringify(newTours),
-    (err) => {
-      res.status(204).json({
-        status: 'success',
-        data: null,
-      });
-    }
-  );
-};
-
-const getAllUsers = (req, res) => {
-  res.status(200).json({
-    status: 'success',
-    requestedAt: req.requstTime,
-    language: req.language,
-    results: users.length,
-    data: {
-      users,
-    },
-  });
-};
-
-const getUser = (req, res) => {
-  res.status(500).json({
-    status: 'error',
-    message: 'This route is not yet defined!',
-  });
-};
-
-const createUser = (req, res) => {
-  res.status(500).json({
-    status: 'error',
-    message: 'This route is not yet defined!',
-  });
-};
-
-const updateUser = (req, res) => {
-  res.status(500).json({
-    status: 'error',
-    message: 'This route is not yet defined!',
-  });
-};
-
-const deleteUser = (req, res) => {
-  res.status(500).json({
-    status: 'error',
-    message: 'This route is not yet defined!',
-  });
-};
 
 // app.get('/api/v1/tours', getAllTours);
 // app.post('/api/v1/tours', createTour);
@@ -164,22 +21,10 @@ const deleteUser = (req, res) => {
 // app.patch('/api/v1/tours/:id', updateTour);
 // app.delete('/api/v1/tours/:id', deleteTour);
 
-// 3) ROUTES
-const tourRouter = express.Router();
-const userRouter = express.Router();
-
-tourRouter.route('/').get(getAllTours).post(createTour);
-tourRouter.route('/:id').get(getTour).patch(updateTour).delete(deleteTour);
-
-userRouter.route('/').get(getAllUsers).post(createUser);
-userRouter.route('/:id').get(getUser).patch(updateUser).delete(deleteUser);
-
+// 2) ROUTES
+// * tourRouter middleware
 app.use('/api/v1/tours', tourRouter);
+// * userRouter middleware
 app.use('/api/v1/users', userRouter);
 
-// 4) START SERVER
-
-const port = 3000;
-app.listen(port, () => {
-  console.log(`App running port ${port}...`);
-});
+module.exports = app;
